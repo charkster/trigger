@@ -9,3 +9,9 @@ These designs were put into a Digilent CMOD A7 fpga board, and I have 2 versions
 I used the "test_pat_gen2.py" script to show that all the modes work as expected. The pattern_generator block generates the pulses that the trigger block looks at.
 So if you have a CMOD A7 board and an oscilloscope or logic analyzer (Amazon has great $12 USB logic analyzers that do 8 channels at 24MHz) you can try this out as-is. Otherwise you are welcome to use the "trigger.sv" in your projects.
 "scarf_top.sv" is my FGPA top-level.
+
+"scarf_top_100mhz.bit" and "scarf_top_100mhz.bin" can be programmed directly into the CMOD A7. I use the following command on my raspberry pi to program the FPGA (not the SPI flash memory):
+
+ xc3sprog -c jtaghs1_fast scarf_top_100mhz.bit
+ 
+ I will soon upload the 12mhz versions of the bit and bin files are most CMOD A7 use that board clock frequency.
