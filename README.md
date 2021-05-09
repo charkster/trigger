@@ -6,7 +6,7 @@ The reason I needed to build this fpga circuit is that I wanted advanced trigger
 
 Three other SCARF-compliant blocks are included: pattern_generator, external_sram and edge_counters.
 These designs were put into a Digilent CMOD A7 fpga board, and I have 2 versions: one with a 12MHz clock and another with a 100MHz clock.
-I used the "test_pat_gen2.py" script to show that all the modes work as expected. The pattern_generator block generates the pulses that the trigger block looks at.
+I used the "test_pat_gen2.py" script to show that all the trigger modes work as expected. The pattern_generator block generates the pulses that the trigger block looks at.
 So if you have a CMOD A7 board and an oscilloscope or logic analyzer (Amazon has great $12 USB2.0 logic analyzers that do 8 channels at 24MHz) you can try this out as-is. Otherwise you are welcome to use the "trigger.sv" in your projects.
 "scarf_top.sv" is my FGPA top-level.
 
