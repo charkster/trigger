@@ -17,3 +17,4 @@ So if you have a CMOD A7 board and an oscilloscope or logic analyzer (Amazon has
  I will soon upload the 12mhz versions of the bit and bin files as most CMOD A7 use that board clock frequency.
  
  SCARF requires a SPI bus to communicate with the fpga board, so a raspberry pi or a USB SPI adapter is needed.
+"CmodA7_Master.xdc" defines all the pin connections needed.
