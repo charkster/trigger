@@ -1,4 +1,5 @@
 
+from __future__ import print_function
 from scarf_slave import scarf_slave
 import math
 
@@ -13,9 +14,9 @@ class scarf_pat_gen:
 		self.scarf_slave    = scarf_slave(slave_id=self.slave_id, num_addr_bytes=self.num_addr_bytes, spidev=self.spidev, debug=self.debug)
 		
 	def pat_gen_enable(self, repeat=False):
-		print "--------------"
-		print "Enable pattern"
-		print "--------------"
+		print("--------------")
+		print("Enable pattern")
+		print("--------------")
 		self.scarf_slave.write_list(addr=0x00, write_byte_list=[0x00]) # send clear, in case previously enabled
 		if (repeat):
 			self.scarf_slave.write_list(addr=0x00, write_byte_list=[0x03]) # repeat is bit 1
@@ -31,7 +32,7 @@ class scarf_pat_gen:
 		
 	def cfg_stage1_count(self, stage1_count=0):
 		if (stage1_count > 15):
-			print "Must specify a timestep less than 16"
+			print("Must specify a timestep less than 16")
 		byte0 = (stage1_count << 4) & 0xF0
 		self.scarf_slave.read_and_clear(addr=0x00, clear_mask=0xF0)
 		self.scarf_slave.read_mod_write(addr=0x00, write_byte=byte0)
@@ -44,13 +45,13 @@ class scarf_pat_gen:
 		
 	def cfg_pat_gen(self, timestep=0, num_gpio=1):
 		if (timestep > 7):
-			print "Must specify a timestep less than 8"
+			print("Must specify a timestep less than 8")
 		elif (num_gpio < 0 or num_gpio > 8 or num_gpio == 3 or num_gpio == 5 or num_gpio == 6 or num_gpio == 7):
-			print "num_gpio must be 1, 2, 4 or 8"
+			print("num_gpio must be 1, 2, 4 or 8")
 		else:
 			bin_num_gpio = int(math.log(num_gpio,2))
 			byte_0 = ((timestep << 3) + bin_num_gpio) & 0xFF
-			print "byte0 or cfg_pat_get is 0x%02x" % (byte_0)
+			print("byte0 or cfg_pat_get is 0x{:02x}".format(byte_0))
 			self.scarf_slave.write_list(addr=0x01, write_byte_list=[byte_0])
 
 	def cfg_sram_end_addr(self, end_addr=0x000000):
@@ -62,10 +63,10 @@ class scarf_pat_gen:
 	def read_all_regmap(self):
 		read_list = self.scarf_slave.read_list(addr=0x00, num_bytes=5)
 		if ((read_list[0] & 0x02) == 0x02):
-			print "Repeat bit is set high"
+			print("Repeat bit is set high")
 		else:
-			print "Repeat bit is set low"
-		print "Timestep is %d" % ((read_list[1] & 0xF8) >> 3)
-		print "Num gpio is %d" % (2 ** (read_list[1] & 0x03))
-		print "End address is 0x%06x" % (((read_list[2] << 16) + (read_list[3] << 8) + read_list[4]) & 0xFFFFFF)
+			print("Repeat bit is set low")
+		print("Timestep is {:d}".format((read_list[1] & 0xF8) >> 3))
+		print("Num gpio is {:d}".format(2 ** (read_list[1] & 0x03)))
+		print("End address is 0x{:06x}".format(((read_list[2] << 16) + (read_list[3] << 8) + read_list[4]) & 0xFFFFFF))
 	
