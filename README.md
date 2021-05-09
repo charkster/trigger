@@ -14,4 +14,4 @@ So if you have a CMOD A7 board and an oscilloscope or logic analyzer (Amazon has
 
  xc3sprog -c jtaghs1_fast scarf_top_100mhz.bit
  
- I will soon upload the 12mhz versions of the bit and bin files are most CMOD A7 use that board clock frequency.
+ I will soon upload the 12mhz versions of the bit and bin files as most CMOD A7 use that board clock frequency.
