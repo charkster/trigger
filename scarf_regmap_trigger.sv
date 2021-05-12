@@ -11,11 +11,11 @@ module scarf_regmap_trigger
     output logic       cfg_enable,
     output logic       cfg_positive,
     output logic [2:0] cfg_type,
+    output logic [3:0] cfg_stage1_count,
     output logic [2:0] cfg_time_base,
     output logic [7:0] cfg_count1,
     output logic [7:0] cfg_count2,
-    output logic       cfg_longer_no_edge,
-    output logic       cfg_12mhz
+    output logic       cfg_longer_no_edge
     );
     
     parameter SLAVE_ID    = 7'h04;
@@ -60,29 +60,29 @@ module scarf_regmap_trigger
     always_ff @(posedge clk, negedge rst_n_sync)
       if (~rst_n_sync) begin cfg_positive       <= 1'b0;
                              cfg_type           <= 3'd0;
+                             cfg_stage1_count   <= 4'd0;
                              cfg_time_base      <= 3'd0;
                              cfg_count1         <= 8'd0;
                              cfg_count2         <= 8'd0;
                              cfg_longer_no_edge <= 1'b0; 
-                             cfg_12mhz          <= 1'b0; 
                              cfg_enable         <= 1'b0; end
       else if (valid_write && (address == 'd0)) cfg_positive       <= data_in[0];
       else if (valid_write && (address == 'd1)) cfg_type           <= data_in[2:0];
-      else if (valid_write && (address == 'd2)) cfg_time_base      <= data_in[2:0];
-      else if (valid_write && (address == 'd3)) cfg_count1         <= data_in[7:0];
-      else if (valid_write && (address == 'd4)) cfg_count2         <= data_in[7:0];
-      else if (valid_write && (address == 'd5)) cfg_longer_no_edge <= data_in[0];
-      else if (valid_write && (address == 'd6)) cfg_12mhz          <= data_in[0];
+      else if (valid_write && (address == 'd2)) cfg_stage1_count   <= data_in[3:0];
+      else if (valid_write && (address == 'd3)) cfg_time_base      <= data_in[2:0];
+      else if (valid_write && (address == 'd4)) cfg_count1         <= data_in[7:0];
+      else if (valid_write && (address == 'd5)) cfg_count2         <= data_in[7:0];
+      else if (valid_write && (address == 'd6)) cfg_longer_no_edge <= data_in[0];
       else if (valid_write && (address == 'd7)) cfg_enable         <= data_in[0];
     
     // this is used for read_data_out decode
     assign registers[0] = {7'd0,cfg_positive};
     assign registers[1] = {5'd0,cfg_type};
-    assign registers[2] = {5'd0,cfg_time_base};
-    assign registers[3] = cfg_count1;
-    assign registers[4] = cfg_count2;
-    assign registers[5] = {7'd0,cfg_longer_no_edge};
-    assign registers[6] = {7'd0,cfg_12mhz};
+    assign registers[2] = {4'd0,cfg_stage1_count};
+    assign registers[3] = {5'd0,cfg_time_base};
+    assign registers[4] = cfg_count1;
+    assign registers[5] = cfg_count2;
+    assign registers[6] = {7'd0,cfg_longer_no_edge};
     assign registers[7] = {7'd0,cfg_enable};
     
 endmodule

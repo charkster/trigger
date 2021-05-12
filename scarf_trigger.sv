@@ -30,9 +30,9 @@ module scarf_trigger
     logic [2:0] cfg_type;
     logic [7:0] cfg_count1;
     logic [7:0] cfg_count2;
+    logic [3:0] cfg_stage1_count;
     logic [2:0] cfg_time_base;
     logic       cfg_longer_no_edge;
-    logic       cfg_12mhz;
   
     scarf_regmap_trigger 
     # ( .SLAVE_ID( SLAVE_ID ) )
@@ -50,9 +50,9 @@ module scarf_trigger
       .cfg_type,              // output [2:0]
       .cfg_count1,            // output [7:0]
       .cfg_count2,            // output [7:0]
+      .cfg_stage1_count,      // output [3:0]
       .cfg_time_base,         // output [2:0]
-      .cfg_longer_no_edge,    // output
-      .cfg_12mhz              // output
+      .cfg_longer_no_edge     // output
      );
     
     trigger u_trigger
@@ -65,9 +65,9 @@ module scarf_trigger
       .cfg_type,              // input [2:0]
       .cfg_count1,            // input [7:0]
       .cfg_count2,            // input [7:0]
+      .cfg_stage1_count,      // input [3:0]
       .cfg_time_base,         // input [2:0]
-      .cfg_longer_no_edge,    // input
-      .cfg_12mhz              // input
+      .cfg_longer_no_edge     // input
      );
     
 endmodule
