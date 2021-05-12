@@ -10,29 +10,32 @@ module trigger
     input  logic [2:0] cfg_type,           // types 0 thru 4: 0 is edge only, 1 is less than, 2 is greater than, 3 is inside window, 4 is outside window
     input  logic [7:0] cfg_count1,         // this is used for cfg_type 1, 2, 3 and 4
     input  logic [7:0] cfg_count2,         // this is used for cfg_type 3 and 4
+    input  logic [3:0] cfg_stage1_count,   // this adapts a fpga clk frequency to a base 10 value
     input  logic [2:0] cfg_time_base,      // selects the timebase for count1 and count2 values
-    input  logic       cfg_longer_no_edge, // if high a cfg_type 2 count above count1 will trigger, a cfg_type 3 count above count2 will trigger
-    input  logic       cfg_12mhz           // if high, fpga clk is 12MHz, else it is 100MHz
+    input  logic       cfg_longer_no_edge  // if high a cfg_type 2 count above count1 will trigger, a cfg_type 3 count above count2 will trigger
     );
     
-    logic        hold_trigger_source;     // used for edge detect
-    logic [23:0] time_base_cnt;           // large counter which starts counting when an edge has been seen
-    logic [23:0] end_time_base_cnt;       // this count is selected by cfg_time_base and cfg_12mhz
-    logic        pos_edge;                // positive edge detected
-    logic        neg_edge;                // negative edge detected
-    logic        en_time_base_cnt;        // enable the time base counter
-    logic        toggle_time_base;        // end_time_base_cnt reached by time_base_cnt
-    logic [7:0]  count;                   // main counter which increments on toggle_time_base
-    logic        opposite_edge;           // the edge opposite to cfg_positive has been seen
-    logic        type0_trig;              // valid criteria for type 0 trigger seen
-    logic        type1_trig;              // valid criteria for type 1 trigger seen
-    logic        type2_trig;              // valid criteria for type 2 trigger seen
-    logic        type3_trig;              // valid criteria for type 3 trigger seen
-    logic        type4_trig;              // valid criteria for type 4 trigger seen
-    logic        any_trig;                // any valid trigger seen
-    logic [2:0]  trig_duration;           // counter used to keep trigger_out high for 7 fpga clocks
-    logic        trigger_source_sync;     // synchronized trigger_source
-    logic        trigger_out_ff;          // flopped trigger_out, which is 1 fpga clock slow
+    logic        hold_trigger_source;        // used for edge detect
+    logic [23:0] time_base_cnt;              // large counter which starts counting when an edge has been seen
+    logic [23:0] end_time_base_cnt;          // this count is selected by cfg_time_base and cfg_12mhz
+    logic        pos_edge;                   // positive edge detected
+    logic        neg_edge;                   // negative edge detected
+    logic        en_time_base_cnt;           // enable the time base counter
+    logic        toggle_time_base;           // end_time_base_cnt reached by time_base_cnt
+    logic [7:0]  count;                      // main counter which increments on toggle_time_base
+    logic        opposite_edge;              // the edge opposite to cfg_positive has been seen
+    logic        type0_trig;                 // valid criteria for type 0 trigger seen
+    logic        type1_trig;                 // valid criteria for type 1 trigger seen
+    logic        type2_trig;                 // valid criteria for type 2 trigger seen
+    logic        type3_trig;                 // valid criteria for type 3 trigger seen
+    logic        type4_trig;                 // valid criteria for type 4 trigger seen
+    logic        any_trig;                   // any valid trigger seen
+    logic [2:0]  trig_duration;              // counter used to keep trigger_out high for 7 fpga clocks
+    logic        trigger_source_sync;        // synchronized trigger_source
+    logic        trigger_out_ff;             // flopped trigger_out, which is 1 fpga clock slow
+    logic [3:0]  stage1_counter;             // stage1_counter counter to adjust the fpga clk to a base 10 equivalent
+    logic [3:0]  final_stage1_count;         // adjusted final value for the stage1_count
+    logic        reached_final_stage1_count; // when this is true the time_base_cnt can increment
 
     // synchronizer to ensure that noisy gpio input does not cause metastability
     synchronizer u_synchronizer_gpio_in
@@ -68,25 +71,37 @@ module trigger
 
     // enable time base counter when valid edge is seen, 
     always@(posedge clk, negedge rst_n_sync)
-      if (~rst_n_sync)                    en_time_base_cnt <= 1'b0;
-      else if (cfg_type == 3'd0)          en_time_base_cnt <= 1'b0; // never count on a type 0
-      else if (trigger_out)               en_time_base_cnt <= 1'b0; // stop counting when the trigger has been driven
-      else if ( cfg_positive && pos_edge) en_time_base_cnt <= 1'b1; // this is a valid event to start counting
-      else if ( cfg_positive && neg_edge) en_time_base_cnt <= 1'b0; // we stop counting here
-      else if (~cfg_positive && neg_edge) en_time_base_cnt <= 1'b1; // this is a valid event to start counting
-      else if (~cfg_positive && pos_edge) en_time_base_cnt <= 1'b0; // we stop counting here
+      if (~rst_n_sync)                              en_time_base_cnt <= 1'b0;
+      else if ((cfg_type == 3'd0) || (~cfg_enable)) en_time_base_cnt <= 1'b0; // never count on a type 0
+      else if (trigger_out)                         en_time_base_cnt <= 1'b0; // stop counting when the trigger has been driven
+      else if ( cfg_positive && pos_edge)           en_time_base_cnt <= 1'b1; // this is a valid event to start counting
+      else if ( cfg_positive && neg_edge)           en_time_base_cnt <= 1'b0; // we stop counting here
+      else if (~cfg_positive && neg_edge)           en_time_base_cnt <= 1'b1; // this is a valid event to start counting
+      else if (~cfg_positive && pos_edge)           en_time_base_cnt <= 1'b0; // we stop counting here
+      
+    always_comb
+        if (cfg_stage1_count >= 3'd1)  final_stage1_count = cfg_stage1_count - 3'd1;
+        else                           final_stage1_count = 3'd0;
+    
+    assign reached_final_stage1_count = (stage1_counter == final_stage1_count);
+    
+    always_ff @(posedge clk, negedge rst_n_sync)
+      if (~rst_n_sync)                                                   stage1_counter <= '0;
+      else if (!en_time_base_cnt || (cfg_type == 3'd0) || (~cfg_enable)) stage1_counter <= '0;
+      else if (!reached_final_stage1_count)                              stage1_counter <= stage1_counter + 1;
+      else if ( reached_final_stage1_count)                              stage1_counter <= '0;
 
     // this depends on the FPGA board clock
     always_comb
-      case(cfg_time_base)                     // 12MHz            100MHz
-        3'd0: end_time_base_cnt = cfg_12mhz ? (24'd12 - 1)      : 0;                  //  10ns
-        3'd1: end_time_base_cnt = cfg_12mhz ? (24'd12 - 1)      : (24'd10 - 1);       // 100ns
-        3'd2: end_time_base_cnt = cfg_12mhz ? (24'd12 - 1)      : (24'd100 - 1);      //   1us
-        3'd3: end_time_base_cnt = cfg_12mhz ? (24'd120 - 1)     : (24'd1000 - 1);     //  10us
-        3'd4: end_time_base_cnt = cfg_12mhz ? (24'd1200 - 1)    : (24'd10000 - 1);    // 100us
-        3'd5: end_time_base_cnt = cfg_12mhz ? (24'd12000 - 1)   : (24'd100000 - 1);   //   1ms
-        3'd6: end_time_base_cnt = cfg_12mhz ? (24'd120000 - 1)  : (24'd1000000 - 1);  //  10ms
-        3'd7: end_time_base_cnt = cfg_12mhz ? (24'd1200000 - 1) : (24'd10000000 - 1); // 100ms
+      case(cfg_time_base)
+        3'd0: end_time_base_cnt = 0;                // stage1 * 10
+        3'd1: end_time_base_cnt = 24'd10 - 1;       // stage1 * 100
+        3'd2: end_time_base_cnt = 24'd100 - 1;      // stage1 * 1E3
+        3'd3: end_time_base_cnt = 24'd1000 - 1;     // stage1 * 1E4
+        3'd4: end_time_base_cnt = 24'd10000 - 1;    // stage1 * 1E5
+        3'd5: end_time_base_cnt = 24'd100000 - 1;   // stage1 * 1E6
+        3'd6: end_time_base_cnt = 24'd1000000 - 1;  // stage1 * 1E7
+        3'd7: end_time_base_cnt = 24'd10000000 - 1; // stage1 * 1E8
       endcase
 
     //assign toggle_time_base = (time_base_cnt == end_time_base_cnt);
@@ -97,16 +112,17 @@ module trigger
       else                                                                        toggle_time_base = (time_base_cnt == end_time_base_cnt);
 
     always@(posedge clk, negedge rst_n_sync)
-      if (~rst_n_sync)                            time_base_cnt <= '0;
-      else if (~en_time_base_cnt)                 time_base_cnt <= '0; // no valid edge seen, so don't count
-      else if (toggle_time_base)                  time_base_cnt <= '0; // reached final count
-      else if (time_base_cnt < end_time_base_cnt) time_base_cnt <= time_base_cnt + 1; // count is enabled, final not reached so count
+      if (~rst_n_sync)                                                            time_base_cnt <= '0;
+      else if (!en_time_base_cnt)                                                 time_base_cnt <= '0; // no valid edge seen, so don't count
+      else if (toggle_time_base)                                                  time_base_cnt <= '0; // reached final count
+      else if ((time_base_cnt < end_time_base_cnt) && reached_final_stage1_count) time_base_cnt <= time_base_cnt + 1; // count is enabled, final not reached so count
 
     // 8 bit count allows values 0 to 255
     always@(posedge clk, negedge rst_n_sync)
-      if (~rst_n_sync)                                                     count <= 'd0;
-      else if (~en_time_base_cnt)                                          count <= 'd0;
-      else if ((en_time_base_cnt && toggle_time_base) && (count < 8'd255)) count <= count + 1;
+      if (~rst_n_sync)                                                                      count <= 'd0;
+      else if (!en_time_base_cnt)                                                           count <= 'd0;
+      else if ((end_time_base_cnt == '0) && reached_final_stage1_count && (count < 8'd255)) count <= count + 1; //special case
+      else if ((toggle_time_base) && (count < 8'd255))                                      count <= count + 1;
 
     always@(posedge clk, negedge rst_n_sync)
       if (~rst_n_sync)                trigger_out <= 1'b0;
