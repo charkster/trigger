@@ -14,7 +14,7 @@ So if you have a CMOD A7 board and an oscilloscope or logic analyzer (Amazon has
 
  xc3sprog -c jtaghs1_fast scarf_top.bit
 
-I compiled xc3sprog from source and added the spi flash chip that this board uses (I have not yet submitted a git pull request). I use this command to program the spi flash:
+I compiled xc3sprog from source and added the spi flash chip that this board uses (I have submitted a git pull request). I use this command to program the spi flash:
 
 xc3sprog -c jtaghs1_fast -I scarf_top.bit
 
