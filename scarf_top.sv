@@ -47,9 +47,20 @@ module scarf_top
    logic        sram_wen_scarf;
    logic [18:0] sram_addr_pat_gen;
    logic        pattern_active;
+   logic        clk_100mhz;
    
    assign rst_n     = ~reset;
    assign sram_data = (sram_oen) ? sram_wdata : 'z;
+   
+   // assign clk_100mhz = clk; // use this if board has 100MHz oscillator
+   
+   // use this if board has 12MHz oscillator
+   clk_wiz_0 u_clk_wiz_0
+   ( .clk_out1 (clk_100mhz), // output
+     .reset    (reset),      //input
+     .locked   (),           // output
+     .clk_in1  (clk)         // input
+     );
    
    // this is SCARF, the SPI interface converted to a byte data stream with protocol indicators
    scarf u_scarf
@@ -57,7 +68,7 @@ module scarf_top
        .mosi,                // SPI input
        .miso,                // SPI output
        .ss_n,                // SPI input
-       .clk,                 // input
+       .clk    (clk_100mhz), // input
        .rst_n,               // input
        .rst_n_sync,          // output
        .read_data_in,        // SCARF input  [7:0]
@@ -79,7 +90,7 @@ module scarf_top
    scarf_pattern_generator 
    # ( .SLAVE_ID(7'h01) )
    u_scarf_pattern_generator
-     ( .clk,                                      // input
+     ( .clk              (clk_100mhz),            // input
        .rst_n_sync,                               // input
        .data_in          (data_out),              // SCARF input [7:0]
        .data_in_valid    (data_out_valid),        // SCARF input
@@ -100,7 +111,7 @@ module scarf_top
    scarf_ext_sram 
    # ( .SLAVE_ID(7'h02) )
    u_scarf_ext_sram
-     ( .clk,                                        // input
+     ( .clk                 (clk_100mhz),           // input
        .rst_n_sync,                                 // input
        .data_in             (data_out),             // SCARF input [7:0]
        .data_in_valid       (data_out_valid),       // SCARF input
@@ -119,7 +130,7 @@ module scarf_top
    scarf_4_edge_counters
    # ( .SLAVE_ID(7'h03) )
    u_scarf_4_edge_counters
-     ( .clk,                                    // input
+     ( .clk               (clk_100mhz),         // input
        .rst_n_sync,                             // input
        .data_in           (data_out),           // SCARF input  [7:0]
        .data_in_valid     (data_out_valid),     // SCARF input
@@ -136,7 +147,7 @@ module scarf_top
     scarf_trigger
     # ( .SLAVE_ID(7'h04) )
     u_scarf_trigger
-    (  .clk,                                    // input
+    (  .clk               (clk_100mhz),         // input
        .rst_n_sync,                             // input
        .data_in           (data_out),           // SCARF input  [7:0]
        .data_in_valid     (data_out_valid),     // SCARF input
