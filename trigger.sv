@@ -80,8 +80,8 @@ module trigger
       else if (~cfg_positive && pos_edge)           en_time_base_cnt <= 1'b0; // we stop counting here
       
     always_comb
-        if (cfg_stage1_count >= 3'd1)  final_stage1_count = cfg_stage1_count - 3'd1;
-        else                           final_stage1_count = 3'd0;
+        if (cfg_stage1_count > 3'd0)  final_stage1_count = cfg_stage1_count - 3'd1;
+        else                          final_stage1_count = 3'd0;
     
     assign reached_final_stage1_count = (stage1_counter == final_stage1_count);
     
@@ -107,22 +107,23 @@ module trigger
     //assign toggle_time_base = (time_base_cnt == end_time_base_cnt);
     // adjust the final time_base_cnt to have one less fpga clock on the last comparison as the trigger_out will be driven 1 clock later
     always_comb
-      if      ((cfg_count1 > 0) && (cfg_type > 0) && (count == (cfg_count1 - 1))) toggle_time_base = (time_base_cnt == (end_time_base_cnt - 1));
+      if      (cfg_time_base == '0)                                               toggle_time_base = 1;
+      else if ((cfg_count1 > 0) && (cfg_type > 0) && (count == (cfg_count1 - 1))) toggle_time_base = (time_base_cnt == (end_time_base_cnt - 1));
       else if ((cfg_count2 > 0) && (cfg_type > 2) && (count == (cfg_count2 - 1))) toggle_time_base = (time_base_cnt == (end_time_base_cnt - 1));
       else                                                                        toggle_time_base = (time_base_cnt == end_time_base_cnt);
 
     always@(posedge clk, negedge rst_n_sync)
       if (~rst_n_sync)                                                            time_base_cnt <= '0;
-      else if (!en_time_base_cnt)                                                 time_base_cnt <= '0; // no valid edge seen, so don't count
+      else if (!en_time_base_cnt || (cfg_time_base == '0))                        time_base_cnt <= '0; // no valid edge seen, so don't count
       else if (toggle_time_base)                                                  time_base_cnt <= '0; // reached final count
       else if ((time_base_cnt < end_time_base_cnt) && reached_final_stage1_count) time_base_cnt <= time_base_cnt + 1; // count is enabled, final not reached so count
 
     // 8 bit count allows values 0 to 255
     always@(posedge clk, negedge rst_n_sync)
-      if (~rst_n_sync)                                                                      count <= 'd0;
-      else if (!en_time_base_cnt)                                                           count <= 'd0;
-      else if ((end_time_base_cnt == '0) && reached_final_stage1_count && (count < 8'd255)) count <= count + 1; //special case
-      else if ((toggle_time_base) && (count < 8'd255))                                      count <= count + 1;
+      if (~rst_n_sync)                                                                  count <= 'd0;
+      else if (!en_time_base_cnt)                                                       count <= 'd0;
+      else if ((cfg_time_base == '0) && reached_final_stage1_count && (count < 8'd255)) count <= count + 1; //this will count when cfg_time_base == 0
+      else if ((cfg_time_base > 0) && (toggle_time_base) && (count < 8'd255))           count <= count + 1; // this will count when cfg_time_base != 0
 
     always@(posedge clk, negedge rst_n_sync)
       if (~rst_n_sync)                trigger_out <= 1'b0;
