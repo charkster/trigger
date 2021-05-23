@@ -1,6 +1,6 @@
 `timescale 1ns/1ns
 
-module tb_spi_slave_lbus ();
+module tb_trigger ();
 
    parameter EXT_CLK_PERIOD_NS = 83;   // 12MHz
    parameter SCLK_PERIOD_NS    = 1000; // 1MHz
