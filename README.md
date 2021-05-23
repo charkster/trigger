@@ -11,7 +11,7 @@ So if you have a CMOD A7 board and an oscilloscope or logic analyzer (Amazon has
 "scarf_top.sv" is my FGPA top-level.
 
 The included bit and bin files were made using the clk_wiz block (which takes the 12MHz clock and multiplies it to be 100MHz, 10ns period).
-"scarf_top.bit" and "scarf_top.bin" can be programmed directly into the CMOD A7. I use the following command on my raspberry pi to program the FPGA:
+"fpga/scarf_top.bit" and "fpga/scarf_top.bin" can be programmed directly into the CMOD A7. I use the following command on my raspberry pi to program the FPGA:
 
  xc3sprog -c jtaghs1_fast scarf_top.bit
 
