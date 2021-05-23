@@ -1,7 +1,7 @@
 # trigger
 SystemVerilog FPGA design of a custom trigger circuit which can be used with oscilloscopes or logic analyzers.
 For a description of all supported modes see: https://www.tiepie.com/en/fut/pulse-width-trigger .
-The "trigger.sv" file implements all the trigger modes and it fits into a SCARF framework. 
+The "rtl/trigger.sv" file implements all the trigger modes and it fits into a SCARF framework. 
 The reason I needed to build this fpga circuit is that I wanted advanced triggering which my logic analyzer did not have. One really cool feature that I wanted is the ability to force a trigger output based on a time-out. For type 2 (pulse longer than) and type 4 (pulse outside window) the "cfg_longer_no_edge" bit can be set high to force a trigger when the pulse exceeds the limit (no edge needed). This was very useful in triggering on a stuck I2C SDA line where SDA remained low permanently.
 
 Three other SCARF-compliant blocks are included: pattern_generator, external_sram and edge_counters.
