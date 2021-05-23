@@ -20,4 +20,4 @@ I compiled xc3sprog from source and added the spi flash chip that this board use
 xc3sprog -c jtaghs1_fast -I scarf_top.bit
 
  SCARF requires a SPI bus to communicate with the fpga board, so a raspberry pi or a USB SPI adapter is needed.
-"CmodA7_Master.xdc" defines all the pin connections needed.
+"CmodA7_Master.xdc" defines all the pin connections needed. The LSB output of the pattern generator block (gpio_pat_gen_out[0]) connects to the trigger_source pin on your breadboard.
